@@ -12,6 +12,35 @@ object JsonDSL:
   // Implement the DSL for exercise 1.1 here.
 
 
+  def json(elements: Map[String, JsonValue]*): JsonObject =  {
+    val jsonMap: Map[String, JsonValue] = Map()
+    elements.foreach(e => jsonMap ++ e )
+
+    JsonObject(values = jsonMap)
+  }
+
+  given Conversion[String, JsonString] = (str: String) => JsonString(str)
+  given Conversion[Long, JsonNumber] = (num: Long) => JsonNumber(num.toDouble)
+  given Conversion[Int, JsonNumber] = (num: Int) => JsonNumber(num.toDouble)
+  given Conversion[Float, JsonNumber] = (num: Float) => JsonNumber(num.toDouble)
+  given Conversion[Double, JsonNumber] = (num: Double) => JsonNumber(num)
+  given Conversion[Short, JsonNumber] = (num: Short) => JsonNumber(num.toDouble)
+
+  given Conversion[Boolean, JsonBoolean] = (bool: Boolean) => if (bool) then
+    JsonTrue
+    else
+    JsonFalse
+
+  given Conversion[List[JsonValue], JsonArray] = (seq: List[JsonValue]) => JsonArray(seq)
+
+  extension (str: String){
+    infix def `:`(value: JsonValue): Map[String, JsonValue] = {
+      return Map.empty + (str -> value)
+    }
+  }
+
+
+
 end JsonDSL
 
 object HttpRequestDSL:
