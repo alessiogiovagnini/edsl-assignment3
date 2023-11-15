@@ -13,8 +13,7 @@ object JsonDSL:
 
 
   def json(elements: Map[String, JsonValue]*): JsonObject =  {
-    val jsonMap: Map[String, JsonValue] = Map()
-    elements.foreach(e => jsonMap ++ e )
+    val jsonMap: Map[String, JsonValue] = Map.empty ++ elements.flatten
 
     JsonObject(values = jsonMap)
   }
@@ -31,11 +30,11 @@ object JsonDSL:
     else
     JsonFalse
 
-  given Conversion[List[JsonValue], JsonArray] = (seq: List[JsonValue]) => JsonArray(seq)
+  given Conversion[Seq[JsonValue], JsonArray] = (seq: Seq[JsonValue]) => JsonArray(seq.toList)
 
   extension (str: String){
     infix def `:`(value: JsonValue): Map[String, JsonValue] = {
-      return Map.empty + (str -> value)
+      Map.empty + (str -> value)
     }
   }
 
@@ -60,42 +59,42 @@ end HttpRequestDSL
   // Uncomment these lines for working examples.
 
   // Empty object 
-  // val jsonFragment1 = json()
+   val jsonFragment1 = json()
 
-  // println(jsonFragment1)
+   println(jsonFragment1)
   
-  // val jsonFragment2 = json(
-  //   "title" `:` "The Matrix",
-  //   "sequel" `:` false,
-  //   "duration"`:` 126
-  // )
+   val jsonFragment2 = json(
+     "title" `:` "The Matrix",
+     "sequel" `:` false,
+     "duration"`:` 126
+   )
 
-  // println(jsonFragment2)
+   println(jsonFragment2)
 
-  // val jsonFragment3 = json(
-  //   "title" `:` "The Matrix",
-  //   "director"`:` json(
-  //     "firstName"`:` "Lana",
-  //     "lastName"`:` "Wachowski"
-  //   )
-  // )
+   val jsonFragment3 = json(
+     "title" `:` "The Matrix",
+     "director"`:` json(
+       "firstName"`:` "Lana",
+       "lastName"`:` "Wachowski"
+     )
+   )
   
-  // println(jsonFragment3)
+   println(jsonFragment3)
 
-  // val jsonFragment4 = json(
-  //   "name" `:` "Morpheus",
-  //   "job" `:` "leader",
-  //   "directors" `:` Seq(json(
-  //     "firstName" `:` "Lana",
-  //     "lastName" `:` "Wachowski"
-  //   ),
-  //   json(
-  //     "firstName" `:` "Lilly",
-  //     "lastName" `:` "Wachowski"
-  //   ))
-  // )
+   val jsonFragment4 = json(
+     "name" `:` "Morpheus",
+     "job" `:` "leader",
+     "directors" `:` Seq(json(
+       "firstName" `:` "Lana",
+       "lastName" `:` "Wachowski"
+     ),
+     json(
+       "firstName" `:` "Lilly",
+       "lastName" `:` "Wachowski"
+     ))
+   )
 
-  // println(jsonFragment4)
+   println(jsonFragment4)
 
 end exercise1_1
 
