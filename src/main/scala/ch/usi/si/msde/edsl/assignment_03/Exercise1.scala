@@ -72,6 +72,7 @@ object HttpRequestDSL:
       val tmp: List[String] = List(rest)
       HTTPObject( baseUrl ++ tmp, URLScheme, queryString)
     }
+    // TODO, this is not correct for the bonus, need to add = method
     infix def ? (rest: String): HTTPObject = {
       getQueryString(rest)
     }
