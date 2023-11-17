@@ -59,14 +59,12 @@ object HttpRequestDSL:
   // should POST be a class???
 
 
-  // TODO: what are the query string of URL?????
-
   def GET (request: HTTPObject): Future[Response] = {
-    ???
+    GetRequest(url = request.buildUrl()).perform()
   }
-  def POST = ???
+  def POST () = ???
 
-  case class HTTPObject(baseUrl: List[String], URLScheme: URLScheme, queryString: Option[Map[String, String]] = None):
+  case class HTTPObject(baseUrl: List[String], URLScheme: URLScheme, queryString: Option[List[KeyValuePair]] = None):
     infix def / (rest: String): HTTPObject = {
       val tmp: List[String] = List(rest)
       HTTPObject( baseUrl ++ tmp, URLScheme, queryString)
@@ -79,6 +77,14 @@ object HttpRequestDSL:
       // same as ?, the complete syntax: path ? "key=value" & "key1=value1" & "key2=value2"
     }
 
+    def buildUrl(): URL = {
+      val query: Option[QueryString] = queryString match
+        case Some(s) => Some(QueryString(s))
+        case None => None
+
+      URL(scheme = URLScheme, domainAndPath = DomainAndPath(baseUrl), queryString = query)
+    }
+
     // helper function
     private def getQueryString(query: String): HTTPObject = {
       val keyVal: Array[String] = query.split("=")
@@ -87,14 +93,13 @@ object HttpRequestDSL:
       } else {
         val key: String = keyVal(0)
         val value: String = keyVal(1)
-        val map: Map[String, String] = Map(key -> value)
+        val newKeyValuePair: List[KeyValuePair] = List(KeyValuePair(key = key, value = value))
         queryString match
-          case Some(oldMap) => HTTPObject(baseUrl = baseUrl, URLScheme = URLScheme, queryString = Some(oldMap ++ map))
-          case None => HTTPObject(baseUrl = baseUrl, URLScheme = URLScheme, queryString = Some(map))
+          case Some(s) => HTTPObject(baseUrl = baseUrl, URLScheme = URLScheme, queryString = Some(s ++ newKeyValuePair))
+          case None => HTTPObject(baseUrl = baseUrl, URLScheme = URLScheme, queryString = Some(newKeyValuePair))
       }
     }
 
-  // TODO, maybe https and http should be a class
   def https(baseUrl: String): HTTPObject = {
     HTTPObject(List(baseUrl), HTTPS)
   }
