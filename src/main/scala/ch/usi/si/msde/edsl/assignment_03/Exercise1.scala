@@ -72,12 +72,26 @@ object HttpRequestDSL:
       HTTPObject( baseUrl ++ tmp, URLScheme, queryString)
     }
     infix def ? (rest: String): HTTPObject = {
-      ???
-      // the syntax should be something like:     path  ?  "key=value"
+      getQueryString(rest)
     }
     infix def & (rest: String): HTTPObject = {
-      ???
+      getQueryString(rest)
       // same as ?, the complete syntax: path ? "key=value" & "key1=value1" & "key2=value2"
+    }
+
+    // helper function
+    private def getQueryString(query: String): HTTPObject = {
+      val keyVal: Array[String] = query.split("=")
+      if (keyVal.length != 2) {
+        this
+      } else {
+        val key: String = keyVal(0)
+        val value: String = keyVal(1)
+        val map: Map[String, String] = Map(key -> value)
+        queryString match
+          case Some(oldMap) => HTTPObject(baseUrl = baseUrl, URLScheme = URLScheme, queryString = Some(oldMap ++ map))
+          case None => HTTPObject(baseUrl = baseUrl, URLScheme = URLScheme, queryString = Some(map))
+      }
     }
 
   // TODO, maybe https and http should be a class
