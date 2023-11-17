@@ -62,7 +62,10 @@ object HttpRequestDSL:
   def GET (request: HTTPObject): Future[Response] = {
     GetRequest(url = request.buildUrl()).perform()
   }
-  def POST () = ???
+  case class POST(request: HTTPObject):
+    infix def withEntity (json: JsonObject): Future[Response] = {
+      PostRequest(url = request.buildUrl(), rawJsonEntity = JsonObject.toString()).perform()
+    }
 
   case class HTTPObject(baseUrl: List[String], URLScheme: URLScheme, queryString: Option[List[KeyValuePair]] = None):
     infix def / (rest: String): HTTPObject = {
@@ -169,29 +172,29 @@ end exercise1_1
    val getRequest2 = GET { https("www.usi.ch") / "en" / "university" }
    val getRequest3 = GET { http("usi.cch") }
 
-  // val postRequest1 = POST { 
-  //   https("reqres.in") / "api" / "users"
-  // } withEntity json (
-  //   "name" `:` "morpheus",
-  //   "job" `:` "leader"
-  // )
+   val postRequest1 = POST {
+     https("reqres.in") / "api" / "users"
+   } withEntity json (
+     "name" `:` "morpheus",
+     "job" `:` "leader"
+   )
 
-  // val postRequest2 = POST { 
-  //   https("reqres.in") / "api" / "register"
-  // } withEntity json {
-  //   "email" `:` "agent.smith@reqres.in"
-  //   "password" `:` "OguhGnivaew"
-  // }
+   val postRequest2 = POST {
+     https("reqres.in") / "api" / "register"
+   } withEntity json {
+     "email" `:` "agent.smith@reqres.in"
+     "password" `:` "OguhGnivaew"
+   }
 
-  // val postRequest3 = POST { 
-  //   https("reqres.in") / "api" / "login"
-  // } withEntity json {
-  //   "email" `:` "morpheus@nebuchadnezzar"
-  // }
+   val postRequest3 = POST {
+     https("reqres.in") / "api" / "login"
+   } withEntity json {
+     "email" `:` "morpheus@nebuchadnezzar"
+   }
 
   // Do not touch this, just uncomment it.
-  // executeInSequence(getRequest1,getRequest2,getRequest3,
-  //   postRequest1, postRequest2, postRequest3)
+   executeInSequence(getRequest1,getRequest2,getRequest3,
+     postRequest1, postRequest2, postRequest3)
 end exercise1_2
 
 // Bonus Exercise (hard)
