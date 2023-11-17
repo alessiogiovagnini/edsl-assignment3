@@ -74,11 +74,18 @@ object HttpRequestDSL:
     }
     // TODO, this is not correct for the bonus, need to add = method
     infix def ? (rest: String): HTTPObject = {
-      getQueryString(rest)
+      this
     }
+
+    def update(key: String, value: String): HTTPObject = {
+      val newKeyValuePair: List[KeyValuePair] = List(KeyValuePair(key = key, value = value))
+      queryString match
+        case Some(s) => HTTPObject(baseUrl = baseUrl, URLScheme = URLScheme, queryString = Some(s ++ newKeyValuePair))
+        case None => HTTPObject(baseUrl = baseUrl, URLScheme = URLScheme, queryString = Some(newKeyValuePair))
+    }
+
     infix def & (rest: String): HTTPObject = {
-      getQueryString(rest)
-      // same as ?, the complete syntax: path ? "key=value" & "key1=value1" & "key2=value2"
+      this
     }
 
     def buildUrl(): URL = {
@@ -87,21 +94,6 @@ object HttpRequestDSL:
         case None => None
 
       URL(scheme = URLScheme, domainAndPath = DomainAndPath(baseUrl), queryString = query)
-    }
-
-    // helper function
-    private def getQueryString(query: String): HTTPObject = {
-      val keyVal: Array[String] = query.split("=")
-      if (keyVal.length != 2) {
-        this
-      } else {
-        val key: String = keyVal(0)
-        val value: String = keyVal(1)
-        val newKeyValuePair: List[KeyValuePair] = List(KeyValuePair(key = key, value = value))
-        queryString match
-          case Some(s) => HTTPObject(baseUrl = baseUrl, URLScheme = URLScheme, queryString = Some(s ++ newKeyValuePair))
-          case None => HTTPObject(baseUrl = baseUrl, URLScheme = URLScheme, queryString = Some(newKeyValuePair))
-      }
     }
 
   def https(baseUrl: String): HTTPObject = {
@@ -207,7 +199,10 @@ end exercise1_2
 
   // val getRequest4 = GET { https("reqres.in") / "api" / "users" ? "page" = "1" & "per_page" = "4" }
   // TODO this won't work since = cannot be overridden, but maybe if ? return an object with the method update we can do something like:
-  // need to test it
+
+  // this work
+  HTTPObject(baseUrl = List("ciao"), URLScheme = HTTPS, queryString = None) (" a") = "b"
+  // but this doesn't and I don't know why ?????
   // val getRequest4 = GET { https("reqres.in") / "api" / "users" ? ("page") = "1" & ("per_page") = "4" }
 
   // Do not touch this, just uncomment it.
