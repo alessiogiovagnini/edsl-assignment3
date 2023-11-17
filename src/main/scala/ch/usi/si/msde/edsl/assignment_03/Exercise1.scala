@@ -1,9 +1,12 @@
 package ch.usi.si.msde.edsl.assignment_03
 
+import ch.usi.si.msde.edsl.assignment_03.model.URLScheme.HTTPS
+import ch.usi.si.msde.edsl.assignment_03.model.URLScheme.HTTP
 import model.*
 import model.HttpRequestModel.*
 import model.JsonModel.*
 import model.AsyncContext
+
 import scala.concurrent.Future
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.HashMap
@@ -49,6 +52,42 @@ object HttpRequestDSL:
   import AsyncContext.{ given, * }
 
   // ** Implement the DSL here **
+  // TODO:
+  // GET and POST need to return a Future[Response],
+  // GET should probably create an URL and pass it to an instance of GetRequest and call perform
+  // POST should create an URL and json with the method withEntity, then create an instance of PostRequest and call perform
+  // should POST be a class???
+
+
+  // TODO: what are the query string of URL?????
+
+  def GET (request: HTTPObject): Future[Response] = {
+    ???
+  }
+  def POST = ???
+
+  case class HTTPObject(baseUrl: List[String], URLScheme: URLScheme, queryString: Option[Map[String, String]] = None):
+    infix def / (rest: String): HTTPObject = {
+      val tmp: List[String] = List(rest)
+      HTTPObject( baseUrl ++ tmp, URLScheme, queryString)
+    }
+    infix def ? (rest: String): HTTPObject = {
+      ???
+      // the syntax should be something like:     path  ?  "key=value"
+    }
+    infix def & (rest: String): HTTPObject = {
+      ???
+      // same as ?, the complete syntax: path ? "key=value" & "key1=value1" & "key2=value2"
+    }
+
+  // TODO, maybe https and http should be a class
+  def https(baseUrl: String): HTTPObject = {
+    HTTPObject(List(baseUrl), HTTPS)
+  }
+
+  def http(baseUrl: String): HTTPObject = {
+    HTTPObject(List(baseUrl), HTTP)
+  }
 
 end HttpRequestDSL
 
@@ -107,9 +146,9 @@ end exercise1_1
   // Exercise 1.2
   // Uncomment these lines for working examples.
   
-  // val getRequest1: Future[Response] = GET { https("www.google.com") / "search" }
-  // val getRequest2 = GET { https("www.usi.ch") / "en" / "university" }
-  // val getRequest3 = GET { http("usi.cch") }
+   val getRequest1: Future[Response] = GET { https("www.google.com") / "search" }
+   val getRequest2 = GET { https("www.usi.ch") / "en" / "university" }
+   val getRequest3 = GET { http("usi.cch") }
 
   // val postRequest1 = POST { 
   //   https("reqres.in") / "api" / "users"
