@@ -206,6 +206,9 @@ end exercise1_2
   import AsyncContext.{ given, * }
 
   // val getRequest4 = GET { https("reqres.in") / "api" / "users" ? "page" = "1" & "per_page" = "4" }
+  // TODO this won't work since = cannot be overridden, but maybe if ? return an object with the method update we can do something like:
+  // need to test it
+  // val getRequest4 = GET { https("reqres.in") / "api" / "users" ? ("page") = "1" & ("per_page") = "4" }
 
   // Do not touch this, just uncomment it.
   // executeInSequence(getRequest4)
