@@ -52,11 +52,7 @@ object HttpRequestDSL:
   import AsyncContext.{ given, * }
 
   // ** Implement the DSL here **
-  // TODO:
-  // GET and POST need to return a Future[Response],
-  // GET should probably create an URL and pass it to an instance of GetRequest and call perform
-  // POST should create an URL and json with the method withEntity, then create an instance of PostRequest and call perform
-  // should POST be a class???
+
 
   inline def GET (request: HTTPObject): Future[Response] = {
     GetRequest(url = request.buildUrl()).perform()
@@ -65,17 +61,15 @@ object HttpRequestDSL:
   inline def POST(request: HTTPObject): POSTObject = {
     POSTObject(request = request)
   }
-  // TODO maybe it should be a inline method for the {
-  // or a method in general
+
   case class POSTObject(request: HTTPObject):
     infix def withEntity (json: JsonObject): Future[Response] = {
-      PostRequest(url = request.buildUrl(), rawJsonEntity = JsonObject.toString()).perform()
+      PostRequest(url = request.buildUrl(), rawJsonEntity = json.toString()).perform()
     }
 
   case class HTTPObject(baseUrl: List[String], URLScheme: URLScheme, queryString: Option[List[KeyValuePair]] = None):
     infix def / (rest: String): HTTPObject = {
-      val tmp: List[String] = List(rest)
-      HTTPObject( baseUrl ++ tmp, URLScheme, queryString)
+      HTTPObject( baseUrl ++ List(rest), URLScheme, queryString)
     }
 
     infix def ? (rest: KeyValuePair): HTTPObject = {
@@ -84,13 +78,6 @@ object HttpRequestDSL:
         case None => List()
 
       HTTPObject(baseUrl = baseUrl, URLScheme = URLScheme, queryString = Some(returnedQuery ++ List(rest)))
-    }
-
-    def update(key: String, value: String): HTTPObject = {
-      val newKeyValuePair: List[KeyValuePair] = List(KeyValuePair(key = key, value = value))
-      queryString match
-        case Some(s) => HTTPObject(baseUrl = baseUrl, URLScheme = URLScheme, queryString = Some(s ++ newKeyValuePair))
-        case None => HTTPObject(baseUrl = baseUrl, URLScheme = URLScheme, queryString = Some(newKeyValuePair))
     }
 
     infix def & (rest: KeyValuePair): HTTPObject = {
