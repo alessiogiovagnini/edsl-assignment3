@@ -58,13 +58,16 @@ object HttpRequestDSL:
   // POST should create an URL and json with the method withEntity, then create an instance of PostRequest and call perform
   // should POST be a class???
 
-  // TODO maybe it should also be an inline method on {
-  def GET (request: HTTPObject): Future[Response] = {
+  inline def GET (request: HTTPObject): Future[Response] = {
     GetRequest(url = request.buildUrl()).perform()
+  }
+
+  inline def POST(request: HTTPObject): POSTObject = {
+    POSTObject(request = request)
   }
   // TODO maybe it should be a inline method for the {
   // or a method in general
-  case class POST(request: HTTPObject):
+  case class POSTObject(request: HTTPObject):
     infix def withEntity (json: JsonObject): Future[Response] = {
       PostRequest(url = request.buildUrl(), rawJsonEntity = JsonObject.toString()).perform()
     }
