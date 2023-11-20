@@ -62,6 +62,7 @@ object HttpRequestDSL:
   def GET (request: HTTPObject): Future[Response] = {
     GetRequest(url = request.buildUrl()).perform()
   }
+  // TODO maybe it should be a inline method for the {
   case class POST(request: HTTPObject):
     infix def withEntity (json: JsonObject): Future[Response] = {
       PostRequest(url = request.buildUrl(), rawJsonEntity = JsonObject.toString()).perform()
@@ -72,9 +73,13 @@ object HttpRequestDSL:
       val tmp: List[String] = List(rest)
       HTTPObject( baseUrl ++ tmp, URLScheme, queryString)
     }
-    // TODO, this is not correct for the bonus, need to add = method
-    infix def ? (rest: String): HTTPObject = {
-      this
+
+    infix def ? (rest: KeyValuePair): HTTPObject = {
+      val returnedQuery: List[KeyValuePair] = queryString match
+        case Some(q) => q
+        case None => List()
+
+      HTTPObject(baseUrl = baseUrl, URLScheme = URLScheme, queryString = Some(returnedQuery ++ List(rest)))
     }
 
     def update(key: String, value: String): HTTPObject = {
@@ -84,8 +89,12 @@ object HttpRequestDSL:
         case None => HTTPObject(baseUrl = baseUrl, URLScheme = URLScheme, queryString = Some(newKeyValuePair))
     }
 
-    infix def & (rest: String): HTTPObject = {
-      this
+    infix def & (rest: KeyValuePair): HTTPObject = {
+      val returnedQuery: List[KeyValuePair] = queryString match
+        case Some(q) => q
+        case None => List()
+
+      HTTPObject(baseUrl = baseUrl, URLScheme = URLScheme, queryString = Some(returnedQuery ++ List(rest)))
     }
 
     def buildUrl(): URL = {
@@ -102,6 +111,12 @@ object HttpRequestDSL:
 
   def http(baseUrl: String): HTTPObject = {
     HTTPObject(List(baseUrl), HTTP)
+  }
+
+  extension (str: String) {
+    infix def update(other: String): KeyValuePair = {
+      KeyValuePair(key = str, value = other)
+    }
   }
 
 end HttpRequestDSL
@@ -197,14 +212,15 @@ end exercise1_2
   import HttpRequestDSL.{ given, * }
   import AsyncContext.{ given, * }
 
+  // This do not work since = (assign) is not overridable
   // val getRequest4 = GET { https("reqres.in") / "api" / "users" ? "page" = "1" & "per_page" = "4" }
-  // TODO this won't work since = cannot be overridden, but maybe if ? return an object with the method update we can do something like:
 
-  // this work
-  HTTPObject(baseUrl = List("ciao"), URLScheme = HTTPS, queryString = None) (" a") = "b"
-  // but this doesn't and I don't know why ?????
+
+  // first attempt did not work, using the update method
   // val getRequest4 = GET { https("reqres.in") / "api" / "users" ? ("page") = "1" & ("per_page") = "4" }
 
+  val getRequest4 = GET { (https("reqres.in") / "api" / "users") ? ("page"() = "1") & ("per_page"() = "4") }
+
   // Do not touch this, just uncomment it.
-  // executeInSequence(getRequest4)
+  executeInSequence(getRequest4)
 end exercise1_3
