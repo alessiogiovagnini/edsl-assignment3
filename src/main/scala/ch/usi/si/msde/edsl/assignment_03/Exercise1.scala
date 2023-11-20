@@ -58,11 +58,12 @@ object HttpRequestDSL:
   // POST should create an URL and json with the method withEntity, then create an instance of PostRequest and call perform
   // should POST be a class???
 
-
+  // TODO maybe it should also be an inline method on {
   def GET (request: HTTPObject): Future[Response] = {
     GetRequest(url = request.buildUrl()).perform()
   }
   // TODO maybe it should be a inline method for the {
+  // or a method in general
   case class POST(request: HTTPObject):
     infix def withEntity (json: JsonObject): Future[Response] = {
       PostRequest(url = request.buildUrl(), rawJsonEntity = JsonObject.toString()).perform()
@@ -214,7 +215,6 @@ end exercise1_2
 
   // This do not work since = (assign) is not overridable
   // val getRequest4 = GET { https("reqres.in") / "api" / "users" ? "page" = "1" & "per_page" = "4" }
-
 
   // first attempt did not work, using the update method
   // val getRequest4 = GET { https("reqres.in") / "api" / "users" ? ("page") = "1" & ("per_page") = "4" }
