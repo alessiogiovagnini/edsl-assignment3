@@ -73,19 +73,12 @@ object HttpRequestDSL:
     }
 
     infix def ? (rest: KeyValuePair): HTTPObject = {
-      val returnedQuery: List[KeyValuePair] = queryString match
-        case Some(q) => q
-        case None => List()
-
-      HTTPObject(baseUrl = baseUrl, URLScheme = URLScheme, queryString = Some(returnedQuery ++ List(rest)))
+      HTTPObject(baseUrl = baseUrl, URLScheme = URLScheme, queryString = Some(List(rest)))
     }
 
     infix def & (rest: KeyValuePair): HTTPObject = {
-      val returnedQuery: List[KeyValuePair] = queryString match
-        case Some(q) => q
-        case None => List()
-
-      HTTPObject(baseUrl = baseUrl, URLScheme = URLScheme, queryString = Some(returnedQuery ++ List(rest)))
+      val toReturn: List[KeyValuePair] = queryString.getOrElse(throw new RuntimeException("Calling & before ? was called."))
+      HTTPObject(baseUrl = baseUrl, URLScheme = URLScheme, queryString = Some(toReturn ++ List(rest)))
     }
 
     def buildUrl(): URL = {
