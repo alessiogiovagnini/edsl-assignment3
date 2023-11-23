@@ -73,6 +73,9 @@ object HttpRequestDSL:
     }
 
     infix def ? (rest: KeyValuePair): HTTPObject = {
+      queryString match
+        case None => // Do nothing
+        case Some(s) => throw new RuntimeException("Method ? must be called first and only once")
       HTTPObject(baseUrl = baseUrl, URLScheme = URLScheme, queryString = Some(List(rest)))
     }
 
