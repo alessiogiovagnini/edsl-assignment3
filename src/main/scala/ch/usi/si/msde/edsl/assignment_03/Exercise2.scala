@@ -1,12 +1,12 @@
 package ch.usi.si.msde.edsl.assignment_03
 
-import scala.concurrent.{Future}
-import scala.util.{Try, Success, Failure}
-import scala.util.Success
-import model.HttpRequestModel._
-import model.AssertionModel._
+import scala.concurrent.Future
+import scala.util.{Failure, Success, Try}
+import model.HttpRequestModel.*
+import model.AssertionModel.{ResponsePredicate, *}
 import model.AssertionExecutor
-import scala.concurrent.Await
+
+import scala.collection.mutable.Stack
 import ch.usi.si.msde.edsl.assignment_03.model.JsonModel.JsonObject
 import ch.usi.si.msde.edsl.assignment_03.model.JsonModel.JsonValue
 
@@ -16,6 +16,79 @@ trait RequestAssertionDSL extends AssertionExecutor:
   import model.AsyncContext._
 
   // Implement the DSL here.
+
+  //>>>>>>>>>> BONUS
+  sealed abstract class ExpressionPredicateTree
+
+  case class PredicateLeaf(responsePredicate: ResponsePredicate) extends ExpressionPredicateTree
+
+  case class OperatorNode(isAnd: Boolean, left: Option[ExpressionPredicateTree] = None, right: Option[ExpressionPredicateTree] = None) extends ExpressionPredicateTree
+
+  def infixToPostfix(infix: List[ExpressionPredicateTree]): List[ExpressionPredicateTree] = {
+    val stack: Stack[OperatorNode] = Stack()
+
+    var postfix: List[ExpressionPredicateTree] = List()
+
+    for (currentElement <- infix) {
+      currentElement match
+        case currentLeaf: PredicateLeaf => {
+          postfix = postfix ++ List(currentLeaf)
+        }
+        case currentOperator: OperatorNode => {
+          if (stack.isEmpty || (!stack.top.isAnd && currentOperator.isAnd)) {
+            stack.push(currentOperator)
+          } else {
+            val popped = stack.popWhile(n => (currentOperator.isAnd && n.isAnd) || !currentOperator.isAnd)
+            stack.push(currentOperator)
+            postfix = postfix ++ popped.toList
+          }
+
+        }
+    }
+    val popped = stack.popAll()
+    postfix = postfix ++ popped.toList
+    postfix
+  }
+
+  def postfixToTree(postfix: List[ExpressionPredicateTree]): ExpressionPredicateTree = {
+    val nodes: Stack[ExpressionPredicateTree] = Stack()
+    for (currentElement <- postfix) {
+      currentElement match
+        case currentLeaf: PredicateLeaf => {
+          nodes.push(currentLeaf)
+        }
+        case currentOperand: OperatorNode => {
+          val right: ExpressionPredicateTree = nodes.pop()
+          val left: ExpressionPredicateTree = nodes.pop()
+          val newNode: OperatorNode = OperatorNode(isAnd = currentOperand.isAnd, left = Some(left), right = Some(right))
+          nodes.push(newNode)
+        }
+    }
+    nodes.pop()
+  }
+
+  def process(isAnd: Boolean, left: ResponsePredicate, right: ResponsePredicate): ResponsePredicate = {
+    if (isAnd) {
+      left && right
+    } else {
+      left || right
+    }
+  }
+
+  def evaluateTree(root: ExpressionPredicateTree): ResponsePredicate = {
+
+    root match
+      case isLeaf: PredicateLeaf => {
+        isLeaf.responsePredicate
+      }
+      case isNode: OperatorNode => {
+        val left: ResponsePredicate = evaluateTree(isNode.left.get)
+        val right: ResponsePredicate = evaluateTree(isNode.right.get)
+
+        process(isAnd = isNode.isAnd, left = left, right = right)
+      }
+  }
+  //>>>>>>>>>> END BONUS
 
   val tests = TestHandler()
 
@@ -30,28 +103,42 @@ trait RequestAssertionDSL extends AssertionExecutor:
   }
 
 
-  case class Test(description: String, response: Option[Future[Response]] = None, rePredicate: Option[ResponsePredicate] = None):
+  case class Test(description: String, response: Option[Future[Response]] = None, rePredicate: List[ExpressionPredicateTree] = List()):
     inline def calling (response: Future[Response]): Test = {
       Test(description = description, response = Some(response))
     }
 
     inline def respondsWith (predicate: ResponsePredicate): Test = {
-      Test(description = description, response = response, rePredicate = Some(predicate))
+      Test(description = description, response = response, rePredicate = rePredicate ++ List(PredicateLeaf(responsePredicate = predicate)))
     }
 
     inline def and (inputPredicate: ResponsePredicate): Test = {
-      val newPredicate: ResponsePredicate = rePredicate.get && inputPredicate
-      Test(description = description, response = response, rePredicate = Some(newPredicate))
+      val andPredicate: OperatorNode = OperatorNode(isAnd = true)
+      Test(description = description, response = response, rePredicate = rePredicate ++ List(andPredicate, PredicateLeaf(responsePredicate = inputPredicate)))
     }
 
     inline def or (inputPredicate: ResponsePredicate): Test = {
-      val newPredicate: ResponsePredicate = rePredicate.get || inputPredicate
-      Test(description = description, response = response, rePredicate = Some(newPredicate))
+      val orPredicate: OperatorNode = OperatorNode(isAnd = false)
+      Test(description = description, response = response, rePredicate = rePredicate ++ List(orPredicate, PredicateLeaf(responsePredicate = inputPredicate)))
     }
 
     def getAssertionWithDescription: AssertionWithDescription = {
+
+      var evaluatedPredicate: ResponsePredicate = rePredicate match
+        case List(singleElement: ResponsePredicate) => {
+          singleElement
+        }
+        case List(_, _*) => {
+          val infix: List[ExpressionPredicateTree] = rePredicate
+          val postFix: List[ExpressionPredicateTree] = infixToPostfix(infix = infix)
+          val predicateRoot: ExpressionPredicateTree = postfixToTree(postfix = postFix)
+          val evaluatedPredicate: ResponsePredicate = evaluateTree(root = predicateRoot)
+          evaluatedPredicate
+        }
+
       val fun = () => response.get
-      val assertion: ExecutableAssertion = RequestSucceedsWithResponsePredicateAssertion(f = fun, responsePredicate = rePredicate.get)
+
+      val assertion: ExecutableAssertion = RequestSucceedsWithResponsePredicateAssertion(f = fun, responsePredicate = evaluatedPredicate )
       AssertionWithDescription(description = description, assertion = assertion)
     }
 
