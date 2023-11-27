@@ -29,7 +29,13 @@ trait RequestAssertionDSL extends AssertionExecutor:
       right: Option[ExpressionPredicateTree] = None
   ) extends ExpressionPredicateTree
 
-  // here we convert the List of infix notation to a list of postfix notation
+  /** Convert the List of infix notation to a list of postfix notation
+    *
+    * @param infix
+    *   The input list of ExpressionPredicateTree elements in infix notation.
+    * @return
+    *   The output list of ExpressionPredicateTree elements in postfix notation.
+    */
   def infixToPostfix(
       infix: List[ExpressionPredicateTree]
   ): List[ExpressionPredicateTree] = {
@@ -43,9 +49,11 @@ trait RequestAssertionDSL extends AssertionExecutor:
           postfix = postfix ++ List(currentLeaf)
         }
         case currentOperator: OperatorNode => {
+          // Check stack conditions for precedence and associativity
           if (stack.isEmpty || (!stack.top.isAnd && currentOperator.isAnd)) {
             stack.push(currentOperator)
           } else {
+            // Pop operators from the stack based on precedence and associativity
             val popped = stack.popWhile(n =>
               (currentOperator.isAnd && n.isAnd) || !currentOperator.isAnd
             )
@@ -60,7 +68,13 @@ trait RequestAssertionDSL extends AssertionExecutor:
     postfix
   }
 
-  // Here we convert the List of postfix notation to our ExpressionTree
+  /** Here we convert the List of postfix notation to our ExpressionTree
+    *
+    * @param postfix
+    *   The input list of ExpressionPredicateTree elements in postfix notation.
+    * @return
+    *   The constructed ExpressionPredicateTree from the postfix notation.
+    */
   def postfixToTree(
       postfix: List[ExpressionPredicateTree]
   ): ExpressionPredicateTree = {
@@ -96,7 +110,16 @@ trait RequestAssertionDSL extends AssertionExecutor:
       left || right
     }
   }
-  // Tree evaluation
+
+  /** Evaluates an ExpressionPredicateTree and returns the corresponding
+    * ResponsePredicate.
+    *
+    * @param root
+    *   The root node of the ExpressionPredicateTree to be evaluated.
+    * @return
+    *   The ResponsePredicate obtained after evaluating the
+    *   ExpressionPredicateTree.
+    */
   def evaluateTree(root: ExpressionPredicateTree): ResponsePredicate = {
 
     root match
