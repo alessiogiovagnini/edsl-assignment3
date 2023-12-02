@@ -18,11 +18,14 @@ trait RequestAssertionDSL extends AssertionExecutor:
   // Implement the DSL here.
 
   // >>>>>>>>>> BONUS
+  // this is the generic element for our expression tree element
   sealed abstract class ExpressionPredicateTree
 
+  // a leaf is a value
   case class PredicateLeaf(responsePredicate: ResponsePredicate)
       extends ExpressionPredicateTree
 
+  // a node is an operator
   case class OperatorNode(
       isAnd: Boolean,
       left: Option[ExpressionPredicateTree] = None,
@@ -98,7 +101,7 @@ trait RequestAssertionDSL extends AssertionExecutor:
     nodes.pop()
   }
 
-  // if it is an AND operation we go for it otherise its an OR
+  // if it is an AND operation we go for it otherwise its an OR
   def process(
       isAnd: Boolean,
       left: ResponsePredicate,
@@ -192,6 +195,7 @@ trait RequestAssertionDSL extends AssertionExecutor:
 
     def getAssertionWithDescription: AssertionWithDescription = {
 
+      // here we make and evaluate the tree only if we have more than one element
       val evaluatedPredicate: ResponsePredicate = rePredicate match
         case List(singleElement: ResponsePredicate) => {
           singleElement
